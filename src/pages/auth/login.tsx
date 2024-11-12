@@ -56,10 +56,10 @@ export default function Login() {
         title: 'Success',
         description: 'You have successfully logged in.',
       });
-    } catch (error) {
+    } catch (error: unknown) {
       toast({
         title: 'Error',
-        description: 'Invalid credentials. Please try again.',
+        description: error instanceof Error ? error.message : 'Invalid credentials. Please try again.',
         variant: 'destructive',
       });
     } finally {

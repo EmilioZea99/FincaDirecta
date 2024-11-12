@@ -35,12 +35,26 @@ export function FeaturedProducts() {
   const addItem = useCartStore((state) => state.addItem);
   const { toast } = useToast();
 
-  const handleAddToCart = (product: typeof featuredProducts[0]) => {
-    addItem(product);
-    toast({
-      title: 'Added to Cart',
-      description: `${product.name} has been added to your cart.`,
-    });
+  const handleAddToCart = async (product: typeof featuredProducts[0]) => {
+    try {
+      await addItem({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image: product.image
+      });
+      
+      toast({
+        title: 'Added to Cart',
+        description: `${product.name} has been added to your cart.`,
+      });
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Failed to add item to cart. Please try again.',
+        variant: 'destructive'
+      });
+    }
   };
 
   return (

@@ -1,8 +1,11 @@
 import BuyerLayout from '@/components/layout/buyer-layout';
 import { CartItems } from '@/components/buyer/cart/cart-items';
 import { CartSummary } from '@/components/buyer/cart/cart-summary';
+import { usePersistentCart } from '@/hooks/use-persistent-cart';
 
 export default function BuyerCart() {
+  usePersistentCart();
+
   return (
     <BuyerLayout>
       <div className="container mx-auto p-4">

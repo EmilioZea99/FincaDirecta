@@ -60,7 +60,13 @@ export function ProductGrid() {
   const { toast } = useToast();
 
   const handleAddToCart = (product: typeof products[0]) => {
-    addItem(product);
+    addItem({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image
+    });
+    
     toast({
       title: 'Added to Cart',
       description: `${product.name} has been added to your cart.`,

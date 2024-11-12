@@ -65,11 +65,14 @@ export default function Register() {
         title: 'Success',
         description: 'Account created successfully. Please log in.',
       });
-      navigate('/login');
+      
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
+      navigate(user.role === 'farmer' ? '/farmer' : '/');
     } catch (error) {
+      console.error('Registration error in component:', error);
       toast({
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error instanceof Error ? error.message : 'Something went wrong. Please try again.',
         variant: 'destructive',
       });
     } finally {

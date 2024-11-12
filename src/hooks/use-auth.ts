@@ -1,50 +1,67 @@
 import { create } from 'zustand';
+import { supabase } from '@/lib/supabase';
 import { AuthState, LoginFormData, RegisterFormData, User } from '@/types/auth';
 
 interface AuthStore extends AuthState {
   login: (data: LoginFormData) => Promise<void>;
   register: (data: RegisterFormData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
 }
 
-// This is a mock implementation. In a real app, you'd integrate with a backend
 export const useAuth = create<AuthStore>((set) => ({
   user: null,
   isAuthenticated: false,
 
   login: async (data: LoginFormData) => {
-    // Simulate API call
-    const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      throw new Error('Invalid credentials');
-    }
-
-    const user = JSON.parse(storedUser);
-    if (user.email !== data.email) {
-      throw new Error('Invalid credentials');
-    }
-
-    set({ user, isAuthenticated: true });
-    localStorage.setItem('auth', 'true');
+    const { error } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    
+    if (error) throw error;
+    
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not found');
+    
+    const userData = {
+      ...user,
+      name: user.user_metadata.name,
+      role: user.user_metadata.role,
+    } as User;
+    
+    localStorage.setItem('user', JSON.stringify(userData));
+    
+    set({ 
+      user: userData,
+      isAuthenticated: true 
+    });
   },
 
   register: async (data: RegisterFormData) => {
-    // Simulate API call
-    const user: User = {
-      id: Math.random().toString(36).slice(2),
-      email: data.email,
-      name: data.name,
-      role: data.role,
-    };
-
-    localStorage.setItem('user', JSON.stringify(user));
-    set({ user, isAuthenticated: true });
-    localStorage.setItem('auth', 'true');
+    try {
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            name: data.name,
+            role: data.role,
+          },
+        },
+      });
+      
+      if (error) {
+        console.error('Supabase signup error:', error);
+        throw error;
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      throw err;
+    }
   },
 
-  logout: () => {
-    localStorage.removeItem('auth');
-    localStorage.removeItem('user');
+  logout: async () => {
+    await supabase.auth.signOut();
     set({ user: null, isAuthenticated: false });
   },
 }));

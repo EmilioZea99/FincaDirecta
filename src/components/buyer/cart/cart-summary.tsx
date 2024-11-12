@@ -7,17 +7,17 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
 export function CartSummary() {
-  const items = useCartStore((state) => state.items);
+  const { items } = useCartStore();
   const clearCart = useCartStore((state) => state.clearCart);
   const navigate = useNavigate();
+  const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalAmount = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   const { toast } = useToast();
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const shipping = items.length > 0 ? 5.00 : 0;
-  const total = subtotal + shipping;
+  const total = totalAmount + shipping;
 
   const handleCheckout = () => {
-    // In a real app, this would navigate to a checkout page or process
     toast({
       title: 'Order Placed',
       description: 'Your order has been successfully placed!',
@@ -33,8 +33,8 @@ export function CartSummary() {
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>{formatCurrency(subtotal)}</span>
+          <span>Items ({itemCount})</span>
+          <span>{formatCurrency(totalAmount)}</span>
         </div>
         <div className="flex justify-between">
           <span>Shipping</span>

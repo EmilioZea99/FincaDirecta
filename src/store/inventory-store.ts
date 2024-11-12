@@ -1,42 +1,77 @@
 import { create } from 'zustand';
+import { supabase } from '@/lib/supabase';
 import { InventoryItem } from '@/types';
 
 interface InventoryStore {
   items: InventoryItem[];
-  addItem: (item: Omit<InventoryItem, 'id'>) => void;
-  updateItem: (id: number, updates: Partial<InventoryItem>) => void;
-  removeItem: (id: number) => void;
-  updateStock: (id: number, quantity: number) => void;
+  fetchItems: () => Promise<void>;
+  addItem: (item: Omit<InventoryItem, 'id'>) => Promise<void>;
+  updateItem: (id: number, updates: Partial<InventoryItem>) => Promise<void>;
+  removeItem: (id: number) => Promise<void>;
 }
 
 export const useInventoryStore = create<InventoryStore>((set) => ({
-  items: [
-    { id: 1, name: 'Russet Potatoes', quantity: 500, unit: 'lbs', price: 0.75, quality: 'Grade A' },
-    { id: 2, name: 'Red Potatoes', quantity: 300, unit: 'lbs', price: 0.85, quality: 'Grade A' },
-    { id: 3, name: 'Yukon Gold Potatoes', quantity: 400, unit: 'lbs', price: 0.95, quality: 'Grade A' },
-  ],
+  items: [],
 
-  addItem: (item) =>
-    set((state) => ({
-      items: [...state.items, { ...item, id: Math.max(...state.items.map((i) => i.id)) + 1 }],
-    })),
+  fetchItems: async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*');
 
-  updateItem: (id, updates) =>
+    if (error) {
+      console.error('Error fetching inventory:', error);
+      return;
+    }
+
+    set({ items: data || [] });
+  },
+
+  addItem: async (item) => {
+    const { data, error } = await supabase
+      .from('products')
+      .insert([item])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding item:', error);
+      return;
+    }
+
+    set((state) => ({ items: [...state.items, data] }));
+  },
+
+  updateItem: async (id, updates) => {
+    const { error } = await supabase
+      .from('products')
+      .update(updates)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating item:', error);
+      return;
+    }
+
     set((state) => ({
       items: state.items.map((item) =>
         item.id === id ? { ...item, ...updates } : item
       ),
-    })),
+    }));
+  },
 
-  removeItem: (id) =>
+  removeItem: async (id) => {
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error removing item:', error);
+      return;
+    }
+
     set((state) => ({
       items: state.items.filter((item) => item.id !== id),
-    })),
-
-  updateStock: (id, quantity) =>
-    set((state) => ({
-      items: state.items.map((item) =>
-        item.id === id ? { ...item, quantity } : item
-      ),
-    })),
+    }));
+  },
 }));
